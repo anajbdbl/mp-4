@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(req: Request, { params }: { params: { query: string } }) {
+export async function GET(
+  req: Request,
+  context: { params: { query: string } }
+) {
   const apiKey = process.env.NEXT_PUBLIC_HARVARD_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json({ error: "Missing API key" }, { status: 500 });
   }
 
-  const query = decodeURIComponent(params.query);
+  const query = decodeURIComponent(context.params.query);
   console.log("Searching for artist:", query);
 
   const url = `https://api.harvardartmuseums.org/object?apikey=${apiKey}&person=${query}`;
