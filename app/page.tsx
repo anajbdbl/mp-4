@@ -2,9 +2,18 @@
 import { useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import ArtworkCard from "@/components/ArtworkCard";
+import { ArtworkProps } from "@/types";
+
+type RawArtwork = {
+  id: number;
+  title?: string;
+  primaryimageurl?: string;
+  people?: { name: string }[];
+  dated?: string;
+};
 
 export default function HomePage() {
-  const [artworks, setArtworks] = useState<any[]>([]);
+  const [artworks, setArtworks] = useState<ArtworkProps[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -15,8 +24,17 @@ export default function HomePage() {
       const res = await fetch(`/api/art/${query}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setArtworks(data.records || []);
-    } catch (error) {
+
+      const mappedArtworks: ArtworkProps[] = (data.records as RawArtwork[]).map((art) => ({
+        id: art.id,
+        title: art.title || "Untitled",
+        primaryimageurl: art.primaryimageurl || "",
+        artist: art.people?.[0]?.name || "Unknown Artist",
+        date: art.dated || "Unknown Date",
+      }));      
+
+      setArtworks(mappedArtworks);
+    } catch {
       setError("Failed to fetch artworks. Try again.");
     } finally {
       setLoading(false);
@@ -26,9 +44,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-green-50 flex flex-col items-center p-8">
       <h1 className="text-5xl font-bold text-green-700 mb-8">Art Explorer</h1>
-      
+
       <SearchBar onSearch={fetchArtworks} />
-      
+
       {loading && <p className="text-green-600 text-lg mt-4">Loading artworks...</p>}
 
       {error && <p className="text-red-500 mt-4">{error}</p>}
@@ -41,13 +59,17 @@ export default function HomePage() {
               id={art.id}
               title={art.title}
               primaryimageurl={art.primaryimageurl}
-              artist={art.people?.[0]?.name || "Unknown Artist"}
-              date={art.dated}
+              artist={art.artist}
+              date={art.date}
             />
           ))}
         </div>
       ) : (
-        !loading && <p className="text-gray-500 mt-8">No artworks found. Try searching for an artist.</p>
+        !loading && (
+          <p className="text-gray-500 mt-8">
+            No artworks found. Try searching for an artist.
+          </p>
+        )
       )}
     </div>
   );
